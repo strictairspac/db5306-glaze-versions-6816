@@ -3,7 +3,7 @@ from sqlalchemy import text
 
 from src.config.settings import cache, engine
 from src.controllers.workflow import download
-from src.models.tables import audit, cases, evidence, runs
+from src.models.tables import audit, cases
 from src.schemas.workflow import CaseForm, LoginForm, ReviewForm
 from src.services import domain, workflow
 from src.services.security import current_user, login, operator, reviewer
@@ -39,9 +39,14 @@ def create_case(form: CaseForm, actor=Depends(operator)):
     return workflow.make_case(form.title, form.payload, actor)
 
 
+@router.put('/cases/{case_id}')
+def update_case(case_id: int, form: CaseForm, actor=Depends(operator)):
+    return workflow.update_case(case_id, form.title, form.payload, actor)
+
+
 @router.get('/runs')
 def list_runs(_=Depends(current_user)):
-    return workflow.recent(runs)
+    return workflow.list_runs()
 
 
 @router.post('/cases/{case_id}/runs', status_code=202)
@@ -51,12 +56,12 @@ def start_run(case_id: int, actor=Depends(operator)):
 
 @router.get('/evidence')
 def list_evidence(_=Depends(current_user)):
-    return workflow.recent(evidence)
+    return workflow.list_evidence()
 
 
 @router.get('/evidence/{identity}/download')
-def export_evidence(identity: int, _=Depends(current_user)):
-    return download(identity)
+def export_evidence(identity: int, actor=Depends(current_user)):
+    return download(identity, actor['sub'])
 
 
 @router.post('/evidence/{identity}/review')

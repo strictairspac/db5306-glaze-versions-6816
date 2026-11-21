@@ -6,15 +6,14 @@ from fastapi import FastAPI
 import uvicorn
 
 from scripts.seed_demo import seed
-from src.config.settings import engine
 from src.middlewares.request import limit_body, request_headers
-from src.models.tables import schema
+from src.migrations import reconcile
 from src.routes.workflow import router
 
 
 @asynccontextmanager
 async def lifespan(app):
-    schema.create_all(engine)
+    reconcile()
     if os.getenv('SEED_DEMO', 'true').lower() == 'true':
         try:
             seed()
