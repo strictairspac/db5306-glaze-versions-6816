@@ -16,7 +16,7 @@ export function evidencePage(state, identity) {
   const metrics = Object.entries(report.metrics).map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('');
   const sections = report.sections.map(x=>panel(x.title, entries(x.rows))).join('');
   const review = current.reviewer ? `<p data-testid="reviewed">${esc(current.reviewer)} · ${esc(date(current.reviewed_at))}</p><p>${esc(current.review_note)}</p>`
-    : state.session.role==='reviewer'?'<form id="review-form"><label>复核意见<textarea name="note" maxlength="500" required></textarea></label><button>签署复核</button></form>'
+    : state.session.role==='reviewer'?`<form id="review-form" data-id="${current.id}"><label>复核意见<textarea name="note" maxlength="500" required></textarea></label><button>签署复核</button></form>`
     : '<p class="note">待复核员签署</p>';
   const tool = signed ? `<button id="download" data-id="${current.id}">导出证据</button>`
     : '<button type="button" disabled title="复核签署后开放下载">导出证据（待签署）</button>';
@@ -35,9 +35,10 @@ export function evidencePage(state, identity) {
 
 export function bindEvidence(api, update, fail) {
   const button = document.getElementById('download');
-  if (!button) return;
-  const identity = button.dataset.id;
-  button.addEventListener('click', async()=>{
+  const form = document.getElementById('review-form');
+  const identity = button?.dataset.id || form?.dataset.id;
+  if (!identity) return;
+  button?.addEventListener('click', async()=>{
     try {
       const response = await api(`/evidence/${identity}/download`, {response:true});
       const url = URL.createObjectURL(await response.blob());
